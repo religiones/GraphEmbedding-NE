@@ -9,6 +9,7 @@ from sklearn.manifold import TSNE
 import tensorflow as tf
 from tqdm import trange
 from sklearn.preprocessing import normalize
+from sklearn.neighbors import NearestNeighbors
 from model.RandomWalker import RandomWalker
 os.environ["TF_CPP_MIN_LOG_LEVEL"]='2' # 只显示 warning 和 Error
 
@@ -53,29 +54,40 @@ def plot_embeddings(embeddings,):
     plt.show()
 
 # embedding相似度计算
-def embedding_similarity(embedding1, embedding2):
-    embedding1 = tf.nn.l2_normalize(embedding1, axis=1)
-    embedding2 = tf.nn.l2_normalize(embedding2, axis=1)
-    plt.scatter(embedding1[:,0], embedding1[:,1])
-    plt.scatter(embedding2[:,0],embedding2[:,1])
-    plt.show()
-    sim_matrix = tf.nn.sigmoid(tf.matmul(embedding1, tf.transpose(embedding2)));
-    loss_simi = tf.reduce_mean(tf.square(sim_matrix))
-    return loss_simi
+# def embedding_similarity(embedding1, embedding2):
+    # embedding1 = tf.nn.l2_normalize(embedding1, axis=1)
+    # embedding2 = tf.nn.l2_normalize(embedding2, axis=1)
+    # plt.scatter(embedding1[:,0], embedding1[:,1],c='b')
+    # plt.scatter(embedding2[:,0],embedding2[:,1], c='g')
+    # plt.show()
+    # sim_matrix = tf.nn.sigmoid(tf.matmul(embedding1, tf.transpose(embedding2)));
+    # loss_simi = tf.reduce_mean(tf.square(sim_matrix))
+    # return loss_simi
+    ##########################################
+    # model_TSNE = TSNE(n_components=2)
+    # node_pos1 = model_TSNE.fit_transform(embedding1)
+    # node_pos2 = model_TSNE.fit_transform(embedding2)
+    # plt.scatter(node_pos1[:,0],node_pos1[:,1])
+    # plt.scatter(node_pos2[:,0],node_pos2[:,1])
+    # plt.show()
     # norm1 = np.linalg.norm(embedding1, axis=-1, keepdims=True)
     # norm2 = np.linalg.norm(embedding2, axis=-1, keepdims=True)
     # dot1 = np.dot(embedding1, embedding2.T)
     # dot2 = np.dot(norm1, norm2.T)
     # cos = dot1/dot2
-    # # embedding1_norm = embedding1/norm1
-    # # embedding2_norm = embedding2/norm2
-    # # cos = np.dot(embedding1_norm, embedding2_norm.T)
-    # cos[cos < 0] = -1
-    # cos[cos > 0] = 1
+    # # # embedding1_norm = embedding1/norm1
+    # # # embedding2_norm = embedding2/norm2
+    # # # cos = np.dot(embedding1_norm, embedding2_norm.T)
+    # # cos[cos < 0] = -1
+    # # cos[cos > 0] = 1
+    # sim = tf.reduce_mean(tf.square(cos))
+    # if sim>0.9:
+    #     return sim
+    # else:
+    #     return sim+0.2
+    ###########################################
 
-
-
-graphList = ["community_1935594.txt","community_1944993.txt","community_1782816.txt","community_2199413.txt"]
+graphList = ["community_1935594.txt","community_1944993.txt","community_1782816.txt","community_2199413.txt","community_1767325.txt","community_1935607.txt","community_2199319.txt"]
 embeddingList = []
 
 
@@ -103,11 +115,16 @@ for graphName in graphList:
     for word in G.nodes():
         # embedding_dict[word] = model.wv[word]
         embedding_list.append(model.wv[word])
-    embedding_list = np.array(embedding_list)
-    embeddingList.append(embedding_list)
+    embedding_list = np.array(embedding_list).flatten().tolist()
+    embedding_list_pad = np.pad(embedding_list,(0,55936-len(embedding_list)),'constant')
+    embeddingList.append(embedding_list_pad.tolist())
     print(graphName+" embedding finish")
 
-print(embedding_similarity(embeddingList[0], embeddingList[2]))
+neigh = NearestNeighbors(n_neighbors=7).fit(np.array(embeddingList))
+distance, indices = neigh.kneighbors(np.array([embeddingList[6]]))
+print(distance)
+print(indices)
+# print(embedding_similarity(embeddingList[1], embeddingList[1]))
 
 # model = TSNE(n_components=2)
 # node_pos0 = model.fit_transform(embeddingList[0])
